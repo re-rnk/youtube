@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube クローン (Mobile Responsive)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        yt: {
+                            dark: '#0f0f0f',
+                            surface: '#212121',
+                            cardHover: '#303030',
+                            border: '#3f3f3f',
+                            textMuted: '#aaa',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #0f0f0f;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #3f3f3f;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f9f9f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        /* Hide scrollbars for clean chip navigation */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-[#0f0f0f] text-black dark:text-white min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="fixed top-0 left-0 right-0 h-14 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between z-50 border-b border-gray-200 dark:border-[#222]">
+        <!-- Left: Menu & Logo -->
+        <div class="flex items-center space-x-2 sm:space-x-4">
+            <button id="menu-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-[#272727] text-lg sm:text-xl transition-colors">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+            <div class="flex items-center space-x-1 cursor-pointer" onclick="location.reload()">
+                <div class="text-red-600 text-2xl sm:text-3xl"><i class="fa-brands fa-youtube"></i></div>
+                <span class="font-bold text-lg sm:text-xl tracking-tighter">YouTube<span class="text-[10px] sm:text-xs align-super font-normal text-gray-500 dark:text-gray-400 ml-0.5">JP</span></span>
+            </div>
+        </div>
+
+        <!-- Center: Desktop Search Bar & Mobile Search Expand -->
+        <div id="desktop-search" class="hidden md:flex items-center flex-1 max-w-2xl mx-4 justify-center">
+            <div class="flex items-center w-full">
+                <div class="flex items-center flex-1 border border-gray-300 dark:border-[#303030] rounded-l-full px-4 py-2 bg-transparent focus-within:border-blue-500 dark:focus-within:border-blue-500 transition-colors">
+                    <input type="text" id="search-input" placeholder="検索" class="w-full bg-transparent focus:outline-none text-sm">
+                </div>
+                <button class="bg-gray-100 dark:bg-[#222] border border-l-0 border-gray-300 dark:border-[#303030] px-6 py-2 rounded-r-full hover:bg-gray-200 dark:hover:bg-[#272727] text-gray-700 dark:text-gray-300 transition-colors">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+            <button class="ml-3 p-2.5 rounded-full bg-gray-100 dark:bg-[#222] hover:bg-gray-200 dark:hover:bg-[#272727] text-gray-800 dark:text-gray-200 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Search Full Overlay (Hidden by default) -->
+        <div id="mobile-search-bar" class="absolute inset-0 bg-white dark:bg-[#0f0f0f] px-3 items-center z-50 hidden md:hidden">
+            <button id="mobile-search-back" class="p-2 mr-2 rounded-full hover:bg-gray-200 dark:hover:bg-[#272727]">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </button>
+            <div class="flex items-center flex-1 border border-gray-300 dark:border-[#303030] rounded-full px-4 py-1.5 bg-gray-50 dark:bg-[#222]">
+                <input type="text" id="mobile-search-input" placeholder="YouTube を検索" class="w-full bg-transparent focus:outline-none text-sm">
+            </div>
+            <button class="ml-2 p-2.5 text-gray-700 dark:text-gray-300">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+        </div>
+
+        <!-- Right: Actions & Profile -->
+        <div class="flex items-center space-x-1 sm:space-x-2">
+            <button id="mobile-search-toggle" class="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-[#272727] md:hidden transition-colors" title="検索">
+                <i class="fa-solid fa-magnifying-glass text-lg"></i>
+            </button>
+            <button id="theme-toggle" class="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-[#272727] transition-colors" title="テーマ切り替え">
+                <i class="fa-solid fa-moon dark:hidden"></i>
+                <i class="fa-solid fa-sun hidden dark:inline"></i>
+            </button>
+            <button class="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-[#272727] hidden sm:block transition-colors">
+                <i class="fa-solid fa-video text-lg"></i>
+            </button>
+            <button class="p-2.5 rounded-full hover:bg-gray-200 dark:hover:bg-[#272727] relative hidden sm:block transition-colors">
+                <span class="absolute top-1 right-1 bg-red-600 text-white text-[10px] px-1 rounded-full">9+</span>
+                <i class="fa-solid fa-bell text-lg"></i>
+            </button>
+            <div class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold cursor-pointer overflow-hidden flex-shrink-0">
+                <img src="https://placehold.co/100x100/purple/white?text=U" alt="Profile" class="w-full h-full object-cover">
+            </div>
+        </div>
+    </header>
+
+    <!-- SIDEBAR BACKDROP FOR MOBILE -->
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-40 hidden transition-opacity lg:hidden"></div>
+
+    <!-- SIDEBAR / DRAWER -->
+    <aside id="sidebar" class="w-64 fixed left-[-16rem] lg:left-0 top-14 bottom-0 bg-white dark:bg-[#0f0f0f] z-50 overflow-y-auto px-3 py-3 transition-transform duration-300 ease-in-out flex flex-col space-y-2 border-r border-gray-200 dark:border-[#222] lg:border-none">
+        <!-- Sidebar Group 1 -->
+        <div class="border-b border-gray-200 dark:border-[#3f3f3f] pb-3 space-y-1">
+            <a href="#" class="flex items-center space-x-6 px-3 py-2.5 rounded-xl bg-gray-100 dark:bg-[#272727] font-medium text-sm">
+                <i class="fa-solid fa-house w-6 text-center"></i>
+                <span>ホーム</span>
+            </a>
+            <a href="#" class="flex items-center space-x-6 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm transition-colors">
+                <i class="fa-solid fa-bolt w-6 text-center"></i>
+                <span>ショート</span>
+            </a>
+            <a href="#" class="flex items-center space-x-6 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm transition-colors">
+                <i class="fa-solid fa-clapperboard w-6 text-center"></i>
+                <span>登録チャンネル</span>
+            </a>
+        </div>
+
+        <!-- Sidebar Group 2 -->
+        <div class="border-b border-gray-200 dark:border-[#3f3f3f] py-3 space-y-1">
+            <div class="px-3 font-medium text-sm text-gray-700 dark:text-gray-300 mb-1">ユーチューブ</div>
+            <a href="#" class="flex items-center space-x-6 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm transition-colors">
+                <i class="fa-solid fa-user-shield w-6 text-center"></i>
+                <span>マイページ</span>
+            </a>
+            <a href="#" class="flex items-center space-x-6 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm transition-colors">
+                <i class="fa-solid fa-clock-rotate-left w-6 text-center"></i>
+                <span>履歴</span>
+            </a>
+            <a href="#" class="flex items-center space-x-6 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm transition-colors">
+                <i class="fa-solid fa-play w-6 text-center"></i>
+                <span>動画</span>
+            </a>
+            <a href="#" class="flex items-center space-x-6 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm transition-colors">
+                <i class="fa-solid fa-clock w-6 text-center"></i>
+                <span>あとで見る</span>
+            </a>
+            <a href="#" class="flex items-center space-x-6 px-3 py-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm transition-colors">
+                <i class="fa-solid fa-thumbs-up w-6 text-center"></i>
+                <span>高評価</span>
+            </a>
+        </div>
+
+        <!-- Subscribed Channels -->
+        <div class="py-3 space-y-1 pb-16 lg:pb-0">
+            <div class="px-3 font-medium text-sm text-gray-700 dark:text-gray-300 mb-1">登録チャンネル</div>
+            <a href="#" class="flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm">
+                <img src="https://placehold.co/50x50/blue/white?text=T" class="w-6 h-6 rounded-full" alt="ch">
+                <span class="truncate">テックラボ</span>
+            </a>
+            <a href="#" class="flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm">
+                <img src="https://placehold.co/50x50/green/white?text=G" class="w-6 h-6 rounded-full" alt="ch">
+                <span class="truncate">ガジェット通信</span>
+            </a>
+            <a href="#" class="flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm">
+                <img src="https://placehold.co/50x50/orange/white?text=M" class="w-6 h-6 rounded-full" alt="ch">
+                <span class="truncate">音楽ライフ</span>
+            </a>
+            <a href="#" class="flex items-center space-x-4 px-3 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-[#272727] text-sm">
+                <img src="https://placehold.co/50x50/red/white?text=C" class="w-6 h-6 rounded-full" alt="ch">
+                <span class="truncate">クッキング・チャンネル</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 h-14 bg-white dark:bg-[#0f0f0f] border-t border-gray-200 dark:border-[#222] flex lg:hidden items-center justify-around z-40 px-2">
+        <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 text-red-600 dark:text-white">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[10px] mt-0.5">ホーム</span>
+        </a>
+        <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
+            <i class="fa-solid fa-bolt text-lg"></i>
+            <span class="text-[10px] mt-0.5">ショート</span>
+        </a>
+        <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
+            <i class="fa-solid fa-circle-plus text-2xl"></i>
+        </a>
+        <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
+            <i class="fa-solid fa-clapperboard text-lg"></i>
+            <span class="text-[10px] mt-0.5">登録</span>
+        </a>
+        <a href="#" class="flex flex-col items-center justify-center flex-1 py-1 text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white">
+            <i class="fa-solid fa-user-shield text-lg"></i>
+            <span class="text-[10px] mt-0.5">マイページ</span>
+        </a>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <div class="flex pt-14 flex-1 overflow-hidden">
+        <!-- CONTENT AREA -->
+        <main id="main-content" class="flex-1 lg:ml-64 p-3 sm:p-6 overflow-y-auto pb-20 lg:pb-6 transition-all duration-300">
+            <!-- Filter Chips -->
+            <div class="flex items-center space-x-3 overflow-x-auto pb-3 mb-4 no-scrollbar whitespace-nowrap">
+                <button class="chip active px-3 py-1.5 bg-black dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium transition-colors">すべて</button>
+                <button class="chip px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-lg text-sm font-medium transition-colors">プログラミング</button>
+                <button class="chip px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-lg text-sm font-medium transition-colors">音楽</button>
+                <button class="chip px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-lg text-sm font-medium transition-colors">ゲーム</button>
+                <button class="chip px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-lg text-sm font-medium transition-colors">料理</button>
+                <button class="chip px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-lg text-sm font-medium transition-colors">ガジェット</button>
+                <button class="chip px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-lg text-sm font-medium transition-colors">旅行</button>
+                <button class="chip px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-lg text-sm font-medium transition-colors">ライブ</button>
+                <button class="chip px-3 py-1.5 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] rounded-lg text-sm font-medium transition-colors">アニメ</button>
+            </div>
+
+            <!-- Video Grid (Responsive 1 col on mobile, 2 on tablet, 3-4 on desktop) -->
+            <div id="video-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-6">
+                <!-- Dynamically populated via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- VIDEO WATCH MODAL (Hidden by default) -->
+    <div id="video-modal" class="fixed inset-0 z-50 bg-black/80 hidden items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto">
+        <div class="bg-white dark:bg-[#0f0f0f] w-full max-w-6xl h-full sm:h-auto sm:rounded-2xl overflow-hidden shadow-2xl flex flex-col lg:flex-row max-h-none sm:max-h-[92vh]">
+            <!-- Left: Video Player and Info -->
+            <div class="flex-1 p-0 sm:p-4 overflow-y-auto">
+                <!-- Simulated Player -->
+                <div class="relative w-full aspect-video bg-black rounded-none sm:rounded-xl overflow-hidden flex items-center justify-center group cursor-pointer">
+                    <img id="modal-thumbnail" src="" alt="Thumbnail" class="w-full h-full object-cover opacity-90">
+                    <div class="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/50 transition-colors">
+                        <div class="w-14 h-14 sm:w-16 sm:h-16 bg-red-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl shadow-lg transform group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-play ml-1"></i>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">12:45</div>
+                </div>
+
+                <div class="p-3 sm:p-0">
+                    <!-- Video Title -->
+                    <h1 id="modal-title" class="text-base sm:text-xl font-bold mt-2 sm:mt-3 leading-snug">動画タイトルがここに表示されます</h1>
+
+                    <!-- Channel & Actions Row -->
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-3 pb-3 border-b border-gray-200 dark:border-[#3f3f3f] gap-3">
+                        <div class="flex items-center justify-between sm:justify-start space-x-3">
+                            <div class="flex items-center space-x-3">
+                                <img id="modal-avatar" src="" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover" alt="Avatar">
+                                <div>
+                                    <div id="modal-channel" class="font-bold text-sm">チャンネル名</div>
+                                    <div class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400">登録者数 120万人</div>
+                                </div>
+                            </div>
+                            <button class="bg-black dark:bg-white text-white dark:text-black font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
+                                チャンネル登録
+                            </button>
+                        </div>
+
+                        <div class="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0 no-scrollbar">
+                            <div class="flex items-center bg-gray-100 dark:bg-[#272727] rounded-full overflow-hidden flex-shrink-0">
+                                <button class="flex items-center space-x-1 px-3 py-1.5 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] text-xs sm:text-sm border-r border-gray-300 dark:border-[#3f3f3f]">
+                                    <i class="fa-solid fa-thumbs-up"></i>
+                                    <span id="modal-likes">2.4万</span>
+                                </button>
+                                <button class="px-3 py-1.5 hover:bg-gray-200 dark:hover:bg-[#3f3f3f] text-xs sm:text-sm">
+                                    <i class="fa-solid fa-thumbs-down"></i>
+                                </button>
+                            </div>
+                            <button class="flex items-center space-x-1 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] px-3 py-1.5 rounded-full text-xs sm:text-sm flex-shrink-0">
+                                <i class="fa-solid fa-share"></i>
+                                <span>共有</span>
+                            </button>
+                            <button class="flex items-center space-x-1 bg-gray-100 dark:bg-[#272727] hover:bg-gray-200 dark:hover:bg-[#3f3f3f] px-3 py-1.5 rounded-full text-xs sm:text-sm flex-shrink-0">
+                                <i class="fa-solid fa-download"></i>
+                                <span>オフロード</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Description Box -->
+                    <div class="bg-gray-100 dark:bg-[#272727] p-3 rounded-xl mt-3 text-xs sm:text-sm">
+                        <div class="flex space-x-4 font-semibold text-[11px] sm:text-xs text-gray-600 dark:text-gray-300 mb-1">
+                            <span>視聴回数: <span id="modal-views">15万</span>回</span>
+                            <span>投稿日: 2日前</span>
+                        </div>
+                        <p class="text-gray-800 dark:text-gray-200 mt-1 leading-relaxed">
+                            こんにちは！今回の動画では、最新のトレンドテクノロジーや魅力的なデザイン手法について分かりやすく解説していきます。ぜひ最後までご覧ください！チャンネル登録と高評価もよろしくお願いします。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Related Videos & Close -->
+            <div class="w-full lg:w-96 p-3 sm:p-4 border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-[#3f3f3f] overflow-y-auto">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-bold text-sm sm:text-base">関連動画</span>
+                    <button id="close-modal" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-[#272727] transition-colors">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                <div id="related-videos" class="space-y-3">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Dummy Video Database
+        const videos = [
+            {
+                id: 1,
+                title: "【初心者向け】HTML/CSSでモダンなYouTubeクローンを作ろう！完全解説チュートリアル",
+                channel: "テックラボ",
+                views: "15万回",
+                time: "2日前",
+                duration: "14:20",
+                category: "プログラミング",
+                thumb: "https://placehold.co/600x338/1e293b/38bdf8?text=YouTube+Clone+Tutorial",
+                avatar: "https://placehold.co/100x100/blue/white?text=T",
+                likes: "1.2万"
+            },
+            {
+                id: 2,
+                title: "2026年おすすめ最強ガジェットTOP5！本当に買ってよかったモノ紹介",
+                channel: "ガジェット通信",
+                views: "42万回",
+                time: "1週間前",
+                duration: "10:05",
+                category: "ガジェット",
+                thumb: "https://placehold.co/600x170/0f172a/f43f5e?text=Top+Gadgets+2026",
+                avatar: "https://placehold.co/100x100/green/white?text=G",
+                likes: "3.5万"
+            },
+            {
+                id: 3,
+                title: "【作業用BGM】極上のチルいLofi HipHopで集中力アップ ☕✨",
+                channel: "音楽ライフ",
+                views: "180万回",
+                time: "1か月前",
+                duration: "2:30:00",
+                category: "音楽",
+                thumb: "https://placehold.co/600x338/312e81/c084fc?text=Lofi+Chill+BGM",
+                avatar: "https://placehold.co/100x100/orange/white?text=M",
+                likes: "12万"
+            },
+            {
+                id: 4,
+                title: "外カリ中ジュワ！プロが教える究極の唐揚げの作り方",
+                channel: "クッキング・チャンネル",
+                views: "8.9万回",
+                time: "3日前",
+                duration: "8:12",
+                category: "料理",
+                thumb: "https://placehold.co/600x338/78350f/fbbf24?text=Crispy+Fried+Chicken",
+                avatar: "https://placehold.co/100x100/red/white?text=C",
+                likes: "7,4千"
+            },
+            {
+                id: 5,
+                title: "オープンワールド新作RPGのマップ探索が美しすぎる件について",
+                channel: "ゲーム実況ch",
+                views: "23万回",
+                time: "5日前",
+                duration: "22:40",
+                category: "ゲーム",
+                thumb: "https://placehold.co/600x338/065f46/34d399?text=Open+World+RPG",
+                avatar: "https://placehold.co/100x100/purple/white?text=P",
+                likes: "1.8万"
+            },
+            {
+                id: 6,
+                title: "日本一周車中泊の旅！絶景スポットと絶品グルメを巡るルーティン",
+                channel: "旅するトラベラー",
+                views: "5.4万回",
+                time: "6日前",
+                duration: "18:50",
+                category: "旅行",
+                thumb: "https://placehold.co/600x338/1e3a8a/60a5fa?text=Van+Life+Japan",
+                avatar: "https://placehold.co/100x100/teal/white?text=V",
+                likes: "4.1千"
+            },
+            {
+                id: 7,
+                title: "【生配信】週末まったり雑談ラジオ Q&Aコーナーもあるよ！",
+                channel: "テックラボ",
+                views: "1.2万回",
+                time: "ライブ配信中",
+                duration: "LIVE",
+                category: "ライブ",
+                thumb: "https://placehold.co/600x338/831843/f472b6?text=Live+Radio+Stream",
+                avatar: "https://placehold.co/100x100/blue/white?text=T",
+                likes: "980"
+            },
+            {
+                id: 8,
+                title: "今期アニメの覇権はこれだ！専門家が徹底考察する見どころまとめ",
+                channel: "アニメニア",
+                views: "31万回",
+                time: "4日前",
+                duration: "15:33",
+                category: "アニメ",
+                thumb: "https://placehold.co/600x338/581c87/e879f9?text=Anime+Review+2026",
+                avatar: "https://placehold.co/100x100/pink/white?text=A",
+                likes: "2.5万"
+            }
+        ];
+
+        // Render Video Grid
+        function renderVideos(filter = "すべて") {
+            const grid = document.getElementById('video-grid');
+            grid.innerHTML = '';
+
+            const filteredVideos = filter === "すべて" 
+                ? videos 
+                : videos.filter(v => v.category === filter);
+
+            filteredVideos.forEach(video => {
+                const card = document.createElement('div');
+                card.className = 'flex flex-col cursor-pointer group';
+                card.innerHTML = `
+                    <div class="relative w-full aspect-video rounded-0 sm:rounded-xl overflow-hidden bg-gray-200 dark:bg-[#222]">
+                        <img src="${video.thumb}" alt="${video.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                        <span class="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded font-medium">${video.duration}</span>
+                    </div>
+                    <div class="flex mt-3 space-x-3 px-2 sm:px-0">
+                        <img src="${video.avatar}" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="avatar">
+                        <div class="flex flex-col flex-1">
+                            <h3 class="font-bold text-sm line-clamp-2 leading-snug group-hover:text-blue-500 transition-colors">${video.title}</h3>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 mt-1 hover:text-black dark:hover:text-white">${video.channel}</span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">${video.views} • ${video.time}</span>
+                        </div>
+                    </div>
+                `;
+                card.addEventListener('click', () => openModal(video));
+                grid.appendChild(card);
+            });
+        }
+
+        // Render Related Videos in Modal
+        function renderRelatedVideos() {
+            const container = document.getElementById('related-videos');
+            container.innerHTML = '';
+            videos.slice(0, 5).forEach(video => {
+                const item = document.createElement('div');
+                item.className = 'flex space-x-2 cursor-pointer group';
+                item.innerHTML = `
+                    <div class="relative w-36 sm:w-40 aspect-video rounded-lg overflow-hidden bg-gray-200 dark:bg-[#222] flex-shrink-0">
+                        <img src="${video.thumb}" class="w-full h-full object-cover group-hover:scale-105 transition-transform">
+                        <span class="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1 rounded">${video.duration}</span>
+                    </div>
+                    <div class="flex flex-col flex-1">
+                        <h4 class="font-bold text-xs line-clamp-2 leading-snug group-hover:text-blue-500">${video.title}</h4>
+                        <span class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">${video.channel}</span>
+                        <span class="text-[11px] text-gray-500 dark:text-gray-400">${video.views} • ${video.time}</span>
+                    </div>
+                `;
+                item.addEventListener('click', () => openModal(video));
+                container.appendChild(item);
+            });
+        }
+
+        // Modal Controls
+        const modal = document.getElementById('video-modal');
+        function openModal(video) {
+            document.getElementById('modal-thumbnail').src = video.thumb;
+            document.getElementById('modal-title').textContent = video.title;
+            document.getElementById('modal-avatar').src = video.avatar;
+            document.getElementById('modal-channel').textContent = video.channel;
+            document.getElementById('modal-views').textContent = video.views;
+            document.getElementById('modal-likes').textContent = video.likes;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            renderRelatedVideos();
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        document.getElementById('close-modal').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        // Sidebar & Drawer Toggle for Mobile
+        const menuBtn = document.getElementById('menu-btn');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+        const mainContent = document.getElementById('main-content');
+        let isDrawerOpen = false;
+
+        function toggleDrawer() {
+            isDrawerOpen = !isDrawerOpen;
+            if (window.innerWidth >= 1024) {
+                // Desktop collapsible margin toggle
+                if (isDrawerOpen) {
+                    sidebar.style.transform = 'translateX(-100%)';
+                    mainContent.classList.remove('lg:ml-64');
+                    mainContent.classList.add('lg:ml-0');
+                } else {
+                    sidebar.style.transform = 'translateX(0)';
+                    mainContent.classList.add('lg:ml-64');
+                    mainContent.classList.remove('lg:ml-0');
+                }
+            } else {
+                // Mobile overlay drawer toggle
+                if (isDrawerOpen) {
+                    sidebar.style.transform = 'translateX(16rem)';
+                    sidebarBackdrop.classList.remove('hidden');
+                } else {
+                    sidebar.style.transform = 'translateX(0)';
+                    sidebarBackdrop.classList.add('hidden');
+                }
+            }
+        }
+
+        menuBtn.addEventListener('click', toggleDrawer);
+        sidebarBackdrop.addEventListener('click', () => {
+            isDrawerOpen = false;
+            sidebar.style.transform = 'translateX(0)';
+            sidebarBackdrop.classList.add('hidden');
+        });
+
+        // Mobile Search Toggle
+        const mobileSearchToggle = document.getElementById('mobile-search-toggle');
+        const mobileSearchBar = document.getElementById('mobile-search-bar');
+        const mobileSearchBack = document.getElementById('mobile-search-back');
+
+        mobileSearchToggle.addEventListener('click', () => {
+            mobileSearchBar.classList.remove('hidden');
+            mobileSearchBar.classList.add('flex');
+            document.getElementById('mobile-search-input').focus();
+        });
+
+        mobileSearchBack.addEventListener('click', () => {
+            mobileSearchBar.classList.add('hidden');
+            mobileSearchBar.classList.remove('flex');
+        });
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const htmlElement = document.documentElement;
+
+        themeToggle.addEventListener('click', () => {
+            if (htmlElement.classList.contains('dark')) {
+                htmlElement.classList.remove('dark');
+            } else {
+                htmlElement.classList.add('dark');
+            }
+        });
+
+        // Filter Chip Interactions
+        const chips = document.querySelectorAll('.chip');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => {
+                    c.classList.remove('bg-black', 'dark:bg-white', 'text-white', 'dark:text-black');
+                    c.classList.add('bg-gray-100', 'dark:bg-[#272727]');
+                });
+                chip.classList.add('bg-black', 'dark:bg-white', 'text-white', 'dark:text-black');
+                chip.classList.remove('bg-gray-100', 'dark:bg-[#272727]');
+                renderVideos(chip.textContent);
+            });
+        });
+
+        // Initial Load
+        window.onload = () => {
+            renderVideos();
+        };
+    </script>
+</body>
+</html>
